@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple, Optional, Union
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 import torch
 from tqdm import tqdm
-from llm_multiprocessing_inference.inference import get_answers
+from llm_multiprocessing_inference import get_answers
 import os
 from dotenv import load_dotenv
 

@@ -38,11 +38,12 @@ class MultiStepZeroShotClassifier:
     
     def __init__(
         self, 
-        second_pass_model: str,
-        second_pass_pipeline: str,
-        second_pass_api_key: Optional[str] = None,
         first_pass_model: str = "MoritzLaurer/bge-m3-zeroshot-v2.0",
         first_pass_threshold: float = 0.25,
+        do_second_pass: bool = True,
+        second_pass_model: str = None,
+        second_pass_pipeline: str = None,
+        second_pass_api_key: Optional[str] = None,
         batch_size: int = 8,
         device: Optional[str] = None,
     ):
@@ -60,9 +61,16 @@ class MultiStepZeroShotClassifier:
         self.first_pass_model = first_pass_model
         self.first_pass_threshold = first_pass_threshold
         self.batch_size = batch_size
-        self.second_pass_model = second_pass_model
-        self.second_pass_api_key = second_pass_api_key
-        self.second_pass_pipeline = second_pass_pipeline
+        self.do_second_pass = do_second_pass
+        if do_second_pass:
+            self.second_pass_model = second_pass_model
+            self.second_pass_api_key = second_pass_api_key
+            self.second_pass_pipeline = second_pass_pipeline
+        else:
+            self.second_pass_model = None
+            self.second_pass_api_key = None
+            self.second_pass_pipeline = None
+
         self.device = device or _get_device()
         self.device = torch.device(self.device)
         self.first_pass_classifier = pipeline("zero-shot-classification", model=self.first_pass_model, device=self.device)
@@ -218,12 +226,14 @@ class MultiStepZeroShotClassifier:
             tags=tags
         )
         
-        
-        # Second pass
-        second_pass_results = self.second_pass_classification(
-            entries=entries,
-            filtered_tags=first_pass_results
-        )
+        if self.do_second_pass:
+            # Second pass
+            second_pass_results = self.second_pass_classification(
+                entries=entries,
+                filtered_tags=first_pass_results
+            )
             
-        return second_pass_results
+            return second_pass_results
+        else:
+            return first_pass_results
 

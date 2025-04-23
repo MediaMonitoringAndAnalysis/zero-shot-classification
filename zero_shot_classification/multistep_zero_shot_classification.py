@@ -15,10 +15,11 @@ nltk.download('punkt')
 
 # Prompt for classification using LLM
 DETAILED_PROMPT_TEMPLATE = """
-You are tasked with classifying the following text based on the provided tags. \n
-The tags to consider are: {tags} \n
-The task is to do am multi-label classification of the text based on the tags (each tag is a label, output is 0, 1 or multiple tags). \n
-The output should be a JSON list of tags that are relevant to the text. 
+You are tasked with classifying the following text based on the provided tags.
+The tags to consider are: {tags} .
+The task is to do a multi-label classification of the text based on the tags (each tag is a label, output is 0, 1 or multiple tags).
+If unsure about a tag, return it anyways. High recall is crucial in this task.
+The output is a JSON list of tags that are relevant to the text. Do not return any other text than the JSON list.
 """
 
 def _get_device():
@@ -143,7 +144,7 @@ class MultiStepZeroShotClassifier:
             filtered_tags (List[str]): List of tags from first pass
             
         Returns:
-            Dict[str, float]: Dictionary of tags and their confidence scores
+            List[List[str]]: List of tags that are relevant to the text
         """
         # Create default_response with all tags set to 0.0
         default_response_str = "[]"
@@ -198,7 +199,7 @@ class MultiStepZeroShotClassifier:
         self, 
         entries: List[str], 
         tags: List[str]
-    ) -> Dict[str, float]:
+    ) -> List[List[str]]:
         """
         Run the complete classification pipeline.
         
@@ -207,7 +208,7 @@ class MultiStepZeroShotClassifier:
             tags (List[str]): List of possible labels/tags
             
         Returns:
-            Dict[str, float]: Final classification results (from second pass)
+            List[List[str]]: Final classification results (from second pass)
         """
         print("===== STARTING CLASSIFICATION PIPELINE =====")
         

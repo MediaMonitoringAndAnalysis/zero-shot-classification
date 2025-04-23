@@ -40,7 +40,7 @@ class MultiStepZeroShotClassifier:
         second_pass_model: str,
         second_pass_pipeline: str,
         second_pass_api_key: Optional[str] = None,
-        first_pass_model: str = "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli",
+        first_pass_model: str = "MoritzLaurer/bge-m3-zeroshot-v2.0",
         first_pass_threshold: float = 0.25,
         batch_size: int = 8,
         device: Optional[str] = None,
@@ -87,7 +87,8 @@ class MultiStepZeroShotClassifier:
         scores = {}
         for i in range(0, len(sentences), self.batch_size):
             batch = sentences[i:i + self.batch_size]
-            results = self.first_pass_classifier(batch, tags, multi_label=True)
+            hypothesis_template = "The topic of this text is {}"
+            results = self.first_pass_classifier(batch, tags, hypothesis_template=hypothesis_template, multi_label=True)
 
             # Aggregate results
             for result in results:

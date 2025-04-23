@@ -75,45 +75,29 @@ class MultiStepZeroShotClassifier:
         self.device = torch.device(self.device)
         self.first_pass_classifier = pipeline("zero-shot-classification", model=self.first_pass_model, device=self.device)
         
-    def _one_entry_first_pass_classification(
-        self,
-        entry: str,
-        tags: List[str],
-    ) -> List[str]:
-        """
-        Perform first pass classification on a single entry.
+    # def _one_entry_first_pass_classification(
+    #     self,
+    #     entries: List[str],
+    #     tags: List[str],
+    # ) -> List[str]:
+    #     """
+    #     Perform first pass classification on a single entry.
         
-        Args:
-            entry (str): The text to classify
-            tags (List[str]): List of possible labels/tags
+    #     Args:
+    #         entry (str): The text to classify
+    #         tags (List[str]): List of possible labels/tags
         
-        Returns:
-            List[str]: List of tags that are relevant to the text
-        """
-        sentences = nltk.sent_tokenize(entry)
-
-        # Process in batches
-        scores = {}
-        for i in range(0, len(sentences), self.batch_size):
-            batch = sentences[i:i + self.batch_size]
-            hypothesis_template = "The topic of this text is {}"
-            results = self.first_pass_classifier(batch, tags, hypothesis_template=hypothesis_template, multi_label=True)
-
-            # Aggregate results
-            for result in results:
-                for label, score in zip(result['labels'], result['scores']):
-                    if label not in scores:
-                        scores[label] = []
-                    scores[label].append(score)
-
-        # Calculate the maximum score for each label
-        keep_tags = [
-            label
-            for label, scores_list in scores.items() 
-            if max(scores_list) > self.first_pass_threshold
-        ]
+    #     Returns:
+    #         List[str]: List of tags that are relevant to the text
+    #     """
         
-        return keep_tags
+        
+
+    #     # Aggregate results
+        
+
+        
+    
         
     def first_pass_classification(
         self,
@@ -131,14 +115,45 @@ class MultiStepZeroShotClassifier:
             List[List[str]]: List of tags that are relevant to the text
             
         """
-        keep_tags_list = []
-        for entry in tqdm(entries, desc="First pass classification"):
-            keep_tags = self._one_entry_first_pass_classification(entry, tags)
-            keep_tags_list.append(keep_tags)
-
-        return keep_tags_list
-
-
+        split_entries = [nltk.sent_tokenize(entry) for entry in entries]
+        # now i want to keep the indices all sentnces respectively before flattening the list so i can retreieve the entry-wise results
+        entries_indices = []
+        final_inputs = []
+        
+        for i, sentences in enumerate(split_entries):
+            for j, one_sentence in enumerate(sentences):
+                entries_indices.append((i, j))
+                final_inputs.append(one_sentence)
+                
+        hypothesis_template = "The topic of this text is {}"
+        results = self.first_pass_classifier(final_inputs, tags, hypothesis_template=hypothesis_template, multi_label=True, batch_size=self.batch_size)
+        
+        per_entry_results = [[] for _ in range(len(entries))]
+        for i, j in entries_indices:
+            per_entry_results[i].append(results[j])
+            
+        final_results = []
+        for i, one_entry_results in enumerate(per_entry_results):
+            scores = {}
+            for result in one_entry_results:
+                for label, score in zip(result['labels'], result['scores']):
+                    if label not in scores:
+                        scores[label] = []
+                    scores[label].append(score)
+            scores = {k: max(v) for k, v in scores.items()}
+            final_results.append(scores)
+            
+        if self.first_pass_threshold is not None:
+            # Calculate the maximum score for each label
+            keep_tags = [[
+                label
+                for label, scores_list in final_results[i].items() 
+                if max(scores_list) > self.first_pass_threshold
+            ] for i in range(len(final_results))]
+            return keep_tags
+        else:
+            return final_results
+                    
     def second_pass_classification(
         self,
         entries: List[str],

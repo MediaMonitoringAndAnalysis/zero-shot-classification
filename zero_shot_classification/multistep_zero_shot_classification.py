@@ -75,29 +75,30 @@ class MultiStepZeroShotClassifier:
         self.device = torch.device(self.device)
         self.first_pass_classifier = pipeline("zero-shot-classification", model=self.first_pass_model, device=self.device)
         
-    # def _one_entry_first_pass_classification(
-    #     self,
-    #     entries: List[str],
-    #     tags: List[str],
-    # ) -> List[str]:
-    #     """
-    #     Perform first pass classification on a single entry.
+    def _one_entry_first_pass_classification(
+        self,
+        entries: List[str],
+        tags: List[str],
+    ) -> List[str]:
+        """
+        Perform first pass classification on a single entry.
         
-    #     Args:
-    #         entry (str): The text to classify
-    #         tags (List[str]): List of possible labels/tags
+        Args:
+            entry (str): The text to classify
+            tags (List[str]): List of possible labels/tags
         
-    #     Returns:
-    #         List[str]: List of tags that are relevant to the text
-    #     """
-        
-        
+        Returns:
+            List[str]: List of tags that are relevant to the text
+        """
+        hypothesis_template = "The topic of this text is {}"
+        results = []
+        for i in tqdm(range (0, len(entries), self.batch_size), desc="First pass classification"):
+            batch_entries = entries[i:i+self.batch_size]
+            batch_results = self.first_pass_classifier(batch_entries, tags, hypothesis_template=hypothesis_template, multi_label=True, batch_size=self.batch_size)
+            results.extend(batch_results)
+        return results
 
-    #     # Aggregate results
-        
 
-        
-    
         
     def first_pass_classification(
         self,
@@ -125,8 +126,7 @@ class MultiStepZeroShotClassifier:
                 entries_indices.append((i, j))
                 final_inputs.append(one_sentence)
                 
-        hypothesis_template = "The topic of this text is {}"
-        results = self.first_pass_classifier(final_inputs, tags, hypothesis_template=hypothesis_template, multi_label=True, batch_size=self.batch_size)
+        results = self._one_entry_first_pass_classification(final_inputs, tags)
         
         per_entry_results = [[] for _ in range(len(entries))]
         for i, j in entries_indices:

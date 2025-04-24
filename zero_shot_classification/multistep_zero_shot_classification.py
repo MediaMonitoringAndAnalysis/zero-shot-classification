@@ -123,14 +123,14 @@ class MultiStepZeroShotClassifier:
         
         for i, sentences in enumerate(split_entries):
             for j, one_sentence in enumerate(sentences):
-                entries_indices.append((i, j))
+                entries_indices.append(i)
                 final_inputs.append(one_sentence)
                 
         results = self._one_entry_first_pass_classification(final_inputs, tags)
         
         per_entry_results = [[] for _ in range(len(entries))]
-        for i, j in entries_indices:
-            per_entry_results[i].append(results[j])
+        for entry_idx, sent_idx in enumerate(entries_indices):
+            per_entry_results[sent_idx].append(results[entry_idx])
             
         final_results = []
         for i, one_entry_results in enumerate(per_entry_results):

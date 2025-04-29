@@ -39,7 +39,7 @@ class MultiStepZeroShotClassifier:
     def __init__(
         self, 
         first_pass_model: str = "MoritzLaurer/bge-m3-zeroshot-v2.0",
-        first_pass_threshold: float = 0.25,
+        first_pass_threshold: Optional[float] = 0.25,
         do_second_pass: bool = True,
         second_pass_model: str = None,
         second_pass_pipeline: str = None,
@@ -222,7 +222,7 @@ class MultiStepZeroShotClassifier:
         self, 
         entries: List[str], 
         tags: List[str]
-    ) -> List[List[str]]:
+    ) -> Union[List[List[str]], List[Dict[str, float]]]:
         """
         Run the complete classification pipeline.
         

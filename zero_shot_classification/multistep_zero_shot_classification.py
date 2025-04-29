@@ -90,7 +90,7 @@ class MultiStepZeroShotClassifier:
         Returns:
             List[str]: List of tags that are relevant to the text
         """
-        hypothesis_template = "The topic of this text is {}"
+        hypothesis_template = "This text contains relevant information about {}"
         results = []
         for i in tqdm(range (0, len(entries), self.batch_size), desc="First pass classification"):
             batch_entries = entries[i:i+self.batch_size]
